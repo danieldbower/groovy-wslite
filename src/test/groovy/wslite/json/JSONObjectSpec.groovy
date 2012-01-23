@@ -87,31 +87,138 @@ class JSONObjectSpec extends Specification {
         '''{"foo":"bar"}''' == result.toString()
     }
 
-    void 'json NULL falseness'() {
-        given:
-        def answer = JSONObject.NULL ? 'true' : 'false'
-
-        expect:
-        !JSONObject.NULL
-        'false' == answer
-    }
-
-    void 'json NULL missing properties return null'() {
+    void 'null values'() {
         given:
         JSONObject result = new JSONObject('''{"foo":"bar","baz":null}''')
 
         expect:
-        result.baz instanceof JSONObject.Null
-        null == result.baz?.zap
+        result.containsKey('baz')
+        null == result.baz
+        !result.baz
     }
 
-    void 'json NULL equals null'() {
+    void 'size'() {
+        given:
+        JSONObject result = new JSONObject()
+        JSONObject resultEmpty = new JSONObject('{}')
+        JSONObject resultOne = new JSONObject('''{"foo":"bar"}''')
+        JSONObject resultThree = new JSONObject('''{"one":1,"two":2,"three":3}''')
+
         expect:
-        JSONObject.NULL.equals(null)
-        // Groovy equals comparison in DefaultTypeTransformation#compareEqual(Object left, Object right)
-        // returns false if either argument is a Java null, so unfortunately JSONObject.NULL == null
-        // can not work.
-        !(JSONObject.NULL == null)
+        0 == result.size()
+        0 == resultEmpty.size()
+        1 == resultOne.size()
+        3 == resultThree.size()
+    }
+
+    void 'isEmpty'() {
+        JSONObject result = new JSONObject()
+        JSONObject resultEmpty = new JSONObject('{}')
+        JSONObject resultOne = new JSONObject('''{"foo":"bar"}''')
+        JSONObject resultThree = new JSONObject('''{"one":1,"two":2,"three":3}''')
+
+        expect:
+        result.isEmpty()
+        resultEmpty.isEmpty()
+        !resultOne.isEmpty()
+        !resultThree.isEmpty()
+    }
+
+    void 'containsKey'() {
+        given:
+        def someKey = "two"
+        JSONObject result = new JSONObject('''{"one":1,"two":2,"three":3}''')
+
+        expect:
+        result.containsKey("one")
+        result.containsKey(someKey)
+        !result.containsKey("foo")
+    }
+
+    void 'containsValue'() {
+        given:
+        def someValue = "2"
+        JSONObject result = new JSONObject('''{"one":"1","two":"2","three":"3"}''')
+
+        expect:
+        result.containsValue("1")
+        result.containsValue(someValue)
+        !result.containsValue("foo")
+    }
+
+    void 'get'() {
+        given:
+        def someKey = "3"
+        JSONObject result = new JSONObject('''{"one":"1","two":"2","three":"3"}''')
+
+        expect:
+        '1' == result.get("one")
+        '3' == result.get("${someKey}")
+    }
+
+    void 'put'() {
+        given:
+        JSONObject result = new JSONObject()
+
+        expect:
+        !true
+    }
+
+    void 'remove'() {
+        given:
+        def someKey = "three"
+        JSONObject result = new JSONObject('''{"one":"1","two":"2","three":"3"}''')
+        result.remove(someKey)
+
+        expect:
+        2 == result.size()
+        !result.containsKey("three")
+        !result.containsValue("3")
+    }
+
+    void 'putAll'() {
+        given:
+        JSONObject result = new JSONObject()
+
+        expect:
+        !true
+    }
+
+    void 'clear'() {
+        given:
+        JSONObject result = new JSONObject('''{"one":"1","two":"2","three":"3"}''')
+
+        when:
+        result.clear()
+
+        then:
+        0 == result.size()
+        result.isEmpty()
+        !result.containsKey("one")
+    }
+
+    void 'keySet'() {
+        given:
+        JSONObject result = new JSONObject('''{"one":"1","two":"2","three":"3"}''')
+
+        expect:
+        ['one', 'two', 'three'] as Set == result.keySet()
+    }
+
+    void 'values'() {
+        given:
+        JSONObject result = new JSONObject('''{"one":"1","two":"2","three":"3"}''')
+
+        expect:
+        ['1', '2', '3'] as Set == result.values()
+    }
+
+    void 'entrySet'() {
+        given:
+        JSONObject result = new JSONObject()
+
+        expect:
+        !true
     }
 
 }
