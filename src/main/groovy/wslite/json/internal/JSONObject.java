@@ -1,4 +1,4 @@
-package wslite.json;
+package org.json;
 
 /*
 Copyright (c) 2002 JSON.org
@@ -36,9 +36,6 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.Set;
-
-import groovy.lang.GString;
 
 /**
  * A JSONObject is an unordered collection of name/value pairs. Its
@@ -90,7 +87,7 @@ import groovy.lang.GString;
  * @author JSON.org
  * @version 2011-11-24
  */
-public class JSONObject implements Map {
+public class JSONObject {
 
     /**
      * JSONObject.NULL is equivalent to the value that JavaScript calls null,
@@ -125,24 +122,6 @@ public class JSONObject implements Map {
         public String toString() {
             return "null";
         }
-
-        /**
-         * Used in Groovy truth
-         * @return false
-         */
-        public boolean asBoolean() {
-            return false;
-        }
-
-        /**
-         * References to any properties should return null.
-         * @param name The name of the property
-         * @return null
-         */
-        public Object propertyMissing(String name) {
-            return null;
-        }
-
     }
 
 
@@ -988,8 +967,8 @@ public class JSONObject implements Map {
                     String name = method.getName();
                     String key = "";
                     if (name.startsWith("get")) {
-                        if (name.equals("getClass") ||
-                                name.equals("getDeclaringClass")) {
+                        if ("getClass".equals(name) ||
+                                "getDeclaringClass".equals(name)) {
                             key = "";
                         } else {
                             key = name.substring(3);
@@ -1579,7 +1558,7 @@ public class JSONObject implements Map {
                      object instanceof Short  || object instanceof Integer    ||
                      object instanceof Long   || object instanceof Boolean    ||
                      object instanceof Float  || object instanceof Double     ||
-                     object instanceof String || object instanceof GString) {
+                     object instanceof String) {
                  return object;
              }
 
@@ -1648,61 +1627,4 @@ public class JSONObject implements Map {
             throw new JSONException(exception);
         }
      }
-
-    public int size() {
-        return length();
-    }
-
-    public boolean isEmpty() {
-        return length() == 0;
-    }
-
-    public boolean containsKey(Object key) {
-        String k = key == null ? null : key.toString();
-        return has(k);
-    }
-
-    public boolean containsValue(Object value) {
-        return map.containsValue(value);
-    }
-
-    public Object get(Object key) {
-        String k = key == null ? null : key.toString();
-        return opt(k);
-    }
-
-    public Object put(Object key, Object value) {
-        String k = key == null ? null : key.toString();
-        try {
-            return put(k, value);
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Object remove(Object key) {
-        String k = key == null ? null : key.toString();
-        return remove(k);
-    }
-
-    public void putAll(Map m) {
-        map.putAll(m);
-    }
-
-    public void clear() {
-        map.clear();
-    }
-
-    public Set keySet() {
-        return map.keySet();
-    }
-
-    public Collection values() {
-        return map.values();
-    }
-
-    public Set entrySet() {
-        return map.entrySet();
-    }
-
 }

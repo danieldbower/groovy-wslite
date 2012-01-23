@@ -1,4 +1,4 @@
-package wslite.json;
+package org.json;
 
 /*
 Copyright (c) 2002 JSON.org
@@ -31,8 +31,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.List;
-import java.util.ListIterator;
 
 /**
  * A JSONArray is an ordered sequence of values. Its external text form is a
@@ -80,7 +78,7 @@ import java.util.ListIterator;
  * @author JSON.org
  * @version 2011-12-19
  */
-public class JSONArray implements List {
+public class JSONArray {
 
 
     /**
@@ -186,11 +184,11 @@ public class JSONArray implements List {
      * @return An object value.
      * @throws JSONException If there is no value for the index.
      */
-    public Object get(int index) {
+    public Object get(int index) throws JSONException {
         Object object = this.opt(index);
-        //if (object == null) {
-        //    throw new JSONException("JSONArray[" + index + "] not found.");
-        //}
+        if (object == null) {
+            throw new JSONException("JSONArray[" + index + "] not found.");
+        }
         return object;
     }
 
@@ -919,90 +917,4 @@ public class JSONArray implements List {
            throw new JSONException(e);
         }
     }
-
-    public int size() {
-        return length();
-    }
-
-    public boolean isEmpty() {
-        return length() == 0;
-    }
-
-    public boolean contains(Object o) {
-        return myArrayList.contains(o);
-    }
-
-    public Iterator iterator() {
-        return myArrayList.iterator();
-    }
-
-    public Object[] toArray() {
-        return myArrayList.toArray();
-    }
-
-    public boolean add(Object o) {
-        return myArrayList.add(o);
-    }
-
-    public boolean remove(Object o) {
-        return myArrayList.remove(o);
-    }
-
-    public boolean containsAll(Collection c) {
-        return myArrayList.containsAll(c);
-    }
-
-    public boolean addAll(Collection c) {
-        return myArrayList.addAll(c);
-    }
-
-    public boolean addAll(int index, Collection c) {
-        return myArrayList.addAll(index, c);
-    }
-
-    public boolean removeAll(Collection c) {
-        return myArrayList.removeAll(c);
-    }
-
-    public boolean retainAll(Collection c) {
-        return myArrayList.retainAll(c);
-    }
-
-    public void clear() {
-        myArrayList.clear();
-    }
-
-    public Object[] toArray(Object[] a) {
-        return myArrayList.toArray(a);
-    }
-
-    public Object set(int index, Object element) {
-        return myArrayList.set(index, element);
-    }
-
-    public void add(int index, Object element) {
-        myArrayList.add(index, element);
-    }
-
-    public int indexOf(Object o) {
-        return myArrayList.indexOf(o);
-    }
-
-    public int lastIndexOf(Object o) {
-        return myArrayList.lastIndexOf(o);
-    }
-
-    public ListIterator listIterator() {
-        return myArrayList.listIterator();
-    }
-
-    public ListIterator listIterator(int index) {
-        return myArrayList.listIterator(index);
-    }
-
-    public List subList(int fromIndex, int toIndex) {
-        return myArrayList.subList(fromIndex, toIndex);
-    }
-
 }
-
