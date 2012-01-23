@@ -15,6 +15,7 @@
 package wslite.json
 
 import spock.lang.*
+import wslite.json.internal.JSONException
 
 class JSONArraySpec extends Specification {
 
@@ -58,6 +59,98 @@ class JSONArraySpec extends Specification {
         then:
         'foo is bar' == result[1]
         '''["foo","foo is bar"]''' == result.toString()
+    }
+
+    void 'size'() {
+        
+    }
+
+    void 'isEmpty'() {
+        
+    }
+
+    void 'contains'() {
+
+    }
+
+    void 'iterator'() {
+
+    }
+
+    void 'toArray'() {
+
+    }
+
+    void 'add'() {
+
+    }
+
+    void 'remove'() {
+
+    }
+
+    void 'containsAll(Collection objects)'() {
+
+    }
+
+    void 'addAll(Collection objects)'() {
+
+    }
+
+    void 'addAll(int i, Collection collection)'() {
+
+    }
+
+    void 'removeAll(Collection objects)'() {
+
+    }
+
+    void 'retainAll(Collection objects)'() {
+
+    }
+
+    void 'clear()'() {
+
+    }
+
+    void 'get(int i)'() {
+
+    }
+
+    void 'set(int i, Object o)'() {
+
+    }
+
+    void 'add(int i, Object o)'() {
+
+    }
+
+    void 'remove(int i)'() {
+
+    }
+
+    void 'indexOf(Object o)'() {
+
+    }
+
+    void 'lastIndexOf(Object o)'() {
+
+    }
+
+    void 'listIterator()'() {
+
+    }
+
+    void 'listIterator(int i)'() {
+
+    }
+
+    void 'subList(int i, int i1)'() {
+
+    }
+
+    void 'toArray(Object[] objects)'() {
+
     }
 
 }

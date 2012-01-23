@@ -14,14 +14,35 @@
  */
 package wslite.json;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import wslite.json.internal.JSONException;
+
+import java.util.*;
 
 public class JSONArray implements List {
 
     private wslite.json.internal.JSONArray wrapped;
+
+    public JSONArray() {
+        wrapped = new wslite.json.internal.JSONArray(); 
+    }
+
+    public JSONArray(String source) throws JSONException {
+        wrapped = new wslite.json.internal.JSONArray(source);
+    }
+
+    public JSONArray(Collection c) {
+        this();
+        for (Object o : c) {
+            add(o);
+        }
+    }
+    
+    public JSONArray(Object[] objects) {
+        this();
+        for (Object o : objects) {
+            add(o);
+        }
+    }
 
     protected JSONArray(wslite.json.internal.JSONArray o) {
         wrapped = o;
@@ -36,43 +57,74 @@ public class JSONArray implements List {
     }
 
     public boolean contains(Object o) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return asList().contains(wrap(o));
     }
 
     public Iterator iterator() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;  // TODO: implement me
     }
 
     public Object[] toArray() {
-        return new Object[0];  //To change body of implemented methods use File | Settings | File Templates.
+        return asList().toArray();
     }
 
     public boolean add(Object o) {
-        return wrapped.put(o) != null;
+        return wrapped.put(wrap(o)) != null;
     }
 
     public boolean remove(Object o) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        int idx = asList().indexOf(wrap(o));
+        if (idx == -1) {
+            return false;
+        }
+        return wrapped.remove(idx) != null;
     }
 
     public boolean containsAll(Collection objects) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        for (Object o : objects) {
+            if (!contains(o)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean addAll(Collection collection) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        boolean success = true;
+        for (Object o : collection) {
+            if (!add(o)) {
+                success = false;
+            }
+        }
+        return success;
     }
 
     public boolean addAll(int i, Collection collection) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        List ary = asList();
+        List wrappedCollection = new ArrayList();
+        for (Object o : collection) {
+            wrappedCollection.add(wrap(o));
+        }
+        if (ary.addAll(i, collection)) {
+            wrapped = new wslite.json.internal.JSONArray(ary);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public boolean removeAll(Collection objects) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        boolean success = true;
+        for (Object o : objects) {
+            if (!remove(wrap(o))) {
+                success = false;
+            }
+        }
+        return success;
     }
 
     public boolean retainAll(Collection objects) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException();
     }
 
     public void clear() {
@@ -84,11 +136,17 @@ public class JSONArray implements List {
     }
 
     public Object set(int i, Object o) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        try {
+            return wrapped.put(i, wrap(o));
+        } catch (JSONException e) {
+            return null;
+        }
     }
 
     public void add(int i, Object o) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        List ary = asList();
+        ary.add(i, wrap(o));
+        wrapped = new wslite.json.internal.JSONArray(ary);
     }
 
     public Object remove(int i) {
@@ -96,26 +154,47 @@ public class JSONArray implements List {
     }
 
     public int indexOf(Object o) {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return asList().indexOf(wrap(o));
     }
 
     public int lastIndexOf(Object o) {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return asList().lastIndexOf(wrap(o));
     }
 
     public ListIterator listIterator() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException(); // TODO: implement me
     }
 
     public ListIterator listIterator(int i) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException(); // TODO: implement me
     }
 
     public List subList(int i, int i1) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException(); // TODO: implement me
     }
 
     public Object[] toArray(Object[] objects) {
-        return new Object[0];  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException();
     }
+
+    @Override
+    public String toString() {
+        return wrapped.toString();
+    }
+
+    protected static Object wrap(Object o) {
+        if (o instanceof wslite.json.internal.JSONArray) {
+            return new JSONArray((wslite.json.internal.JSONArray) o);
+        }
+        return JSONObject.wrap(o);
+    }
+
+    private List asList() {
+        List ary = new ArrayList();
+        for (int i = 0; i < wrapped.length(); i++) {
+            ary.add(wrapped.opt(i));
+        }
+        return ary;
+    }
+
 }
