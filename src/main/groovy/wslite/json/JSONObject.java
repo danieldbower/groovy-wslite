@@ -19,7 +19,7 @@ import groovy.lang.GString;
 import wslite.json.internal.JSONException;
 
 public class JSONObject implements Map {
-    
+
     private wslite.json.internal.JSONObject wrapped;
     
     public JSONObject() {
@@ -76,9 +76,10 @@ public class JSONObject implements Map {
     }
 
     public void putAll(Map map) {
-        Set<Map.Entry> entrySet = map.entrySet();
-        for (Map.Entry e : entrySet) {
-            put(wrap(e.getKey()), wrap(e.getValue()));
+        Set entrySet = map.entrySet();
+        for (Object e : entrySet) {
+            Map.Entry entry = (Entry) e;
+            put(wrap(entry.getKey()), wrap(entry.getValue()));
         }
     }
 
@@ -103,20 +104,20 @@ public class JSONObject implements Map {
             return Collections.EMPTY_LIST;
         }
         List values = new ArrayList();
-        Set<Entry> entries = entrySet();
-        for (Entry e : entries) {
-            Object o = e.getValue();
-            values.add(wrap(o));
+        Set entries = entrySet();
+        for (Object e : entries) {
+            Map.Entry entry = (Entry) e;
+            values.add(wrap(entry.getValue()));
         }
         return values;
     }
 
     public Set entrySet() {
-        Set<Map.Entry> entrySet = new HashSet<Map.Entry>();
+        Set entrySet = new HashSet();
         for (Object k : keySet()) {
             Map e = new HashMap();
             e.put(k, wrap(get(k)));
-            entrySet.add((Entry)e.entrySet().iterator().next());
+            entrySet.add((Entry) e.entrySet().iterator().next());
         }
         return entrySet;
     }
@@ -126,17 +127,12 @@ public class JSONObject implements Map {
         return wrapped.toString();
     }
 
-    private JSONObject wrap(wslite.json.internal.JSONObject o) {
-        return new JSONObject(o);
-    }
-
-    private JSONArray wrap(wslite.json.internal.JSONArray o) {
-        return new JSONArray(o);
-    }
-
-    private Object wrap(Object o) {
+    protected static Object wrap(Object o) {
         if (o == null || o == wslite.json.internal.JSONObject.NULL) {
             return null;
+        }
+        if (o instanceof wslite.json.internal.JSONObject) {
+            return new JSONObject((wslite.json.internal.JSONObject) o);
         }
         if (o instanceof GString) {
             return o.toString();
