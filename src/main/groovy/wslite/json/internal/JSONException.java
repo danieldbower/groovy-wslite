@@ -1,4 +1,4 @@
-package org.json;
+package wslite.json.internal;
 
 /**
  * The JSONException is thrown by the JSON.org classes when things are amiss.

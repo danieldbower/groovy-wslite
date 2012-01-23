@@ -1,4 +1,4 @@
-package org.json;
+package wslite.json.internal;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package org.json;
+package wslite.json.internal;
 
 /*
 Copyright (c) 2002 JSON.org
