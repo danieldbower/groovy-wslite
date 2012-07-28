@@ -1,4 +1,4 @@
-/* Copyright 2011 the original author or authors.
+/* Copyright 2011-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,12 @@
 package wslite.http
 
 import wslite.http.auth.*
-
 import java.util.zip.GZIPInputStream
 
 class HTTPClient {
 
-    int connectTimeout = 0
-    int readTimeout = 0
+    int connectTimeout
+    int readTimeout
     boolean followRedirects = true
     boolean useCaches
     boolean sslTrustAllCerts
@@ -43,102 +42,92 @@ class HTTPClient {
          this.httpConnectionFactory = httpConnectionFactory
     }
 
-    HTTPResponse execute(HTTPRequest request) {
-        if (!(request?.url && request?.method)) {
-            throw new IllegalArgumentException('HTTP Request must contain a url and method')
-        }
-        HTTPResponse response
-        def conn
+    HTTPResponse execute(HTTPRequest httpRequest) {
+        assertValidArgument(httpRequest)
+        HTTPRequest request = buildRequest(httpRequest)
+        HTTPResponse response = null
+        def connection = null
         try {
-            conn = createConnection(request)
-            setupConnection(conn, request)
-            def connstream = (conn.inputStream && (conn.contentEncoding == 'gzip')) ? (new GZIPInputStream(conn.inputStream)) : conn.inputStream
-            response = buildResponse(conn, connstream?.bytes)
+            connection = httpConnectionFactory.getConnection(request)
+            configureConnection(connection, request)
+            response = buildResponse(connection, getResponseStream(connection))
         } catch(Exception ex) {
-            if (!conn) {
+            if (!connection) {
                 throw new HTTPClientException(ex.message, ex, request, response)
             } else {
-                response = buildResponse(conn, conn.errorStream?.bytes)
+                response = buildResponse(connection, getErrorResponseStream(connection))
                 throw new HTTPClientException(response.statusCode + ' ' + response.statusMessage,
                         ex, request, response)
             }
         } finally {
-            conn?.disconnect()
+            connection?.disconnect()
         }
         return response
     }
 
-    private createConnection(HTTPRequest request) {
-        def usedProxy = request.proxy ?: proxy
-        if (isSecureConnectionRequest(request)) {
-            if (shouldTrustAllSSLCerts(request)) {
-                return httpConnectionFactory.getConnectionTrustAllSSLCerts(request.url, usedProxy)
-            }
-            if (shouldTrustSSLCertsUsingTrustStore(request)) {
-                String trustStoreFile
-                String trustStorePassword
-                if (request.sslTrustStoreFile) {
-                    trustStoreFile = request.sslTrustStoreFile
-                    trustStorePassword = request.sslTrustStorePassword
-                } else {
-                    trustStoreFile = sslTrustStoreFile
-                    trustStorePassword = sslTrustStorePassword
-                }
-                return httpConnectionFactory.getConnectionUsingTrustStore(request.url,
-                        trustStoreFile, trustStorePassword, usedProxy)
-            }
-        }
-        return httpConnectionFactory.getConnection(request.url, usedProxy)
-    }
-
-    private boolean isSecureConnectionRequest(HTTPRequest request) {
-        return request.url.protocol.toLowerCase() == 'https'
-    }
-
-    private boolean shouldTrustAllSSLCerts(HTTPRequest request) {
-        return request.isSSLTrustAllCertsSet ? request.sslTrustAllCerts : sslTrustAllCerts
-    }
-
-    private boolean shouldTrustSSLCertsUsingTrustStore(HTTPRequest request) {
-        return request.sslTrustStoreFile !=null || sslTrustStoreFile !=null
-    }
-
-    private void setupConnection(conn, HTTPRequest request) {
-        conn.setRequestMethod(request.method.toString())
-        conn.setConnectTimeout(request.isConnectTimeoutSet ? request.connectTimeout : connectTimeout)
-        conn.setReadTimeout(request.isReadTimeoutSet ? request.readTimeout : readTimeout)
-        conn.setUseCaches(request.isUseCachesSet ? request.useCaches : useCaches)
-        conn.setInstanceFollowRedirects(request.isFollowRedirectsSet ? request.followRedirects : followRedirects)
-        setRequestHeaders(conn, request)
-        setAuthorizationHeader(conn)
-        if (request.data) {
-            conn.setDoOutput(true)
-            if (conn.getRequestProperty(HTTP.CONTENT_LENGTH_HEADER) == null) {
-                conn.setRequestProperty(HTTP.CONTENT_LENGTH_HEADER, "${request.data.size()}")
-            }
-            conn.outputStream.bytes = request.data
+    private boolean assertValidArgument(HTTPRequest request) throws IllegalArgumentException {
+        if (!request?.url || !request?.method) {
+            throw new IllegalArgumentException('HTTP Request must contain a url and method')
         }
     }
 
-    private void setRequestHeaders(conn, request) {
-        for (entry in request.headers) {
-            setConnectionRequestProperty(conn, entry.key, entry.value)
+    private HTTPRequest buildRequest(HTTPRequest request) {
+        HTTPRequest req = new HTTPRequest(request)
+        req.with {
+            if (!request.isConnectTimeoutSet) connectTimeout = this.connectTimeout
+            if (!request.isReadTimeoutSet) readTimeout = this.readTimeout
+            if (!request.isFollowRedirectsSet) followRedirects = this.followRedirects
+            if (!request.isUseCachesSet) useCaches = this.useCaches
+            if (!request.proxy) request.proxy = this.proxy
+            if (!request.sslTrustStoreFile) {
+                sslTrustStoreFile = this.sslTrustStoreFile
+                sslTrustStorePassword = this.sslTrustStorePassword
+            }
+            if (!request.isSSLTrustAllCertsSet) sslTrustAllCerts = this.sslTrustAllCerts
+            addDefaultRequestProperties(headers)
         }
+        return req
+    }
+
+    private void addDefaultRequestProperties(Map headers) {
         for (entry in defaultHeaders) {
-            if (conn.getRequestProperty(entry.key) == null) {
-                setConnectionRequestProperty(conn, entry.key, entry.value)
+            if (!headers.containsKey(entry.key)) {
+                headers[entry.key] = entry.value
             }
         }
     }
 
-    private void setConnectionRequestProperty(conn, String key, List values) {
-        for (val in values) {
-            setConnectionRequestProperty(conn, key, val.toString())
+    private void configureConnection(connection, HTTPRequest request) {
+        connection.setRequestMethod(request.method.toString())
+        connection.setConnectTimeout(request.connectTimeout)
+        connection.setReadTimeout(request.readTimeout)
+        connection.setUseCaches(request.useCaches)
+        connection.setInstanceFollowRedirects(request.followRedirects)
+        setRequestHeaders(connection, request)
+        setAuthorizationHeader(connection)
+        if (request.data) {
+            connection.setDoOutput(true)
+            if (connection.getRequestProperty(HTTP.CONTENT_LENGTH_HEADER) == null) {
+                connection.setRequestProperty(HTTP.CONTENT_LENGTH_HEADER, "${request.data.size()}")
+            }
+            connection.outputStream.bytes = request.data
         }
     }
 
-    private void setConnectionRequestProperty(conn, String key, String value) {
-        conn.setRequestProperty(key, value)
+    private void setRequestHeaders(connection, request) {
+        for (entry in request.headers) {
+            setConnectionRequestProperty(connection, entry.key, entry.value)
+        }
+    }
+
+    private void setConnectionRequestProperty(connection, String key, List values) {
+        for (val in values) {
+            setConnectionRequestProperty(connection, key, val.toString())
+        }
+    }
+
+    private void setConnectionRequestProperty(connection, String key, String value) {
+        connection.setRequestProperty(key, value)
     }
 
     private void setAuthorizationHeader(conn) {
@@ -147,27 +136,42 @@ class HTTPClient {
         }
     }
 
-    private HTTPResponse buildResponse(conn, responseData) {
+    private HTTPResponse buildResponse(connection, data) {
         def response = new HTTPResponse()
-        response.data = responseData
-        response.statusCode = conn.responseCode
-        response.statusMessage = conn.responseMessage
-        response.url = conn.URL
-        response.contentEncoding = conn.contentEncoding
-        response.contentLength = conn.contentLength
-        ContentTypeHeader contentTypeHeader = new ContentTypeHeader(conn.contentType)
+        response.data = data?.bytes
+        response.statusCode = connection.responseCode
+        response.statusMessage = connection.responseMessage
+        response.url = connection.URL
+        response.contentEncoding = connection.contentEncoding
+        response.contentLength = connection.contentLength
+        ContentTypeHeader contentTypeHeader = new ContentTypeHeader(connection.contentType)
         response.contentType = contentTypeHeader.mediaType
         response.charset = contentTypeHeader.charset
-        response.date = new Date(conn.date)
-        response.expiration = new Date(conn.expiration)
-        response.lastModified = new Date(conn.lastModified)
-        response.headers = headersToMap(conn)
+        response.date = new Date(connection.date)
+        response.expiration = new Date(connection.expiration)
+        response.lastModified = new Date(connection.lastModified)
+        response.headers = headersToMap(connection)
         return response
     }
 
-    private Map headersToMap(conn) {
+    private getResponseStream(connection) {
+        return getEncodedStream(connection.inputStream, connection.contentEncoding)
+    }
+
+    private getErrorResponseStream(connection) {
+        return getEncodedStream(connection.errorStream, connection.contentEncoding)
+    }
+
+    private getEncodedStream(stream, contentEncoding) {
+        if (stream && contentEncoding == 'gzip') {
+            return new GZIPInputStream(stream)
+        }
+        return stream
+    }
+
+    private Map headersToMap(connection) {
         def headers = [:]
-        for (entry in conn.headerFields) {
+        for (entry in connection.headerFields) {
             headers[entry.key ?: ''] = entry.value.size() > 1 ? entry.value : entry.value[0]
         }
         return headers

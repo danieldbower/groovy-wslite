@@ -1,4 +1,4 @@
-/* Copyright 2011 the original author or authors.
+/* Copyright 2011-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,28 @@ class HTTPRequest {
     boolean isUseCachesSet
     boolean isFollowRedirectsSet
     boolean isSSLTrustAllCertsSet
+
+    HTTPRequest() { }
+
+    HTTPRequest(HTTPRequest clone) {
+        this.url = clone.url
+        this.method = clone.method
+        this.connectTimeout = clone.connectTimeout
+        this.readTimeout = clone.readTimeout
+        this.followRedirects = clone.followRedirects
+        this.useCaches = clone.useCaches
+        this.sslTrustAllCerts = clone.sslTrustAllCerts
+        this.sslTrustStoreFile = clone.sslTrustStoreFile
+        this.sslTrustStorePassword = clone.sslTrustStorePassword
+        this.proxy = clone.proxy
+        this.headers = clone.headers
+        this.data = clone.data
+        this.isConnectTimeoutSet = clone.isConnectTimeoutSet
+        this.isReadTimeoutSet = clone.isReadTimeoutSet
+        this.isUseCachesSet = clone.isUseCachesSet
+        this.isFollowRedirectsSet = clone.isFollowRedirectsSet
+        this.isSSLTrustAllCertsSet = clone.isSSLTrustAllCertsSet
+    }
 
     void setHeaders(Map map) {
         headers.putAll(map)

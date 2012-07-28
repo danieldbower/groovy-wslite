@@ -26,14 +26,10 @@ class HTTPClientSpec extends Specification {
     void setup() {
         conn = new MockHTTPClientConnection()
         httpClient = new HTTPClient()
-        httpClient.httpConnectionFactory = [getConnection: { url, proxy=null ->
-            conn.URL = url
-            return conn
-        }, getConnectionUsingTrustStore: {
-            url, tsfile, tspassword, proxy=null ->
-            conn.URL = url
-            conn.setRequestProperty('javax.net.ssl.trustStore', tsfile)
-            conn.setRequestProperty('javax.net.ssl.trustStorePassword', tspassword)
+        httpClient.httpConnectionFactory = [getConnection: { HTTPRequest request ->
+            conn.URL = request.url
+            conn.setRequestProperty('javax.net.ssl.trustStore', request.sslTrustStoreFile)
+            conn.setRequestProperty('javax.net.ssl.trustStorePassword', request.sslTrustStorePassword)
             return conn
         }] as HTTPConnectionFactory
     }
@@ -76,41 +72,6 @@ class HTTPClientSpec extends Specification {
         !conn.useCaches
     }
 
-    void 'client will trust all ssl certs if not overridden on request'() {
-        given:
-        httpClient.sslTrustAllCerts = true
-
-        when:
-        httpClient.execute(mockHttpsGetRequest)
-
-        then:
-        conn.hostnameVerifier.verify('foo', null)
-    }
-
-    void 'request set to trust all ssl certs will override client'() {
-        given:
-        httpClient.sslTrustAllCerts = false
-
-        when:
-        mockHttpsGetRequest.sslTrustAllCerts = true
-        httpClient.execute(mockHttpsGetRequest)
-
-        then:
-        conn.hostnameVerifier.verify('foo', null)
-    }
-
-    void 'request set to not trust all ssl will override client'() {
-        given:
-        httpClient.sslTrustAllCerts = true
-
-        when:
-        mockHttpsGetRequest.sslTrustAllCerts = false
-        httpClient.execute(mockHttpsGetRequest)
-
-        then:
-        null == conn.hostnameVerifier
-    }
-
     void 'client will use trust store if not overridden on request'() {
         given:
         httpClient.sslTrustStoreFile = '~/test.jks'
@@ -146,8 +107,8 @@ class HTTPClientSpec extends Specification {
         httpClient.execute(mockHttpsGetRequest)
 
         then:
-        1 * httpClient.httpConnectionFactory.getConnection(mockHttpsGetRequest.url, httpClient.proxy) >> { url, proxy ->
-            conn.URL = url
+        1 * httpClient.httpConnectionFactory.getConnection(mockHttpsGetRequest) >> { req ->
+            conn.URL = req.url
             conn
         }
     }
@@ -201,8 +162,8 @@ class HTTPClientSpec extends Specification {
         httpClient.execute(mockHttpsGetRequest)
 
         then:
-        1 * httpClient.httpConnectionFactory.getConnection(mockHttpsGetRequest.url, testproxy) >> { url, proxy ->
-            conn.URL = url
+        1 * httpClient.httpConnectionFactory.getConnection(mockHttpsGetRequest) >> { request ->
+            conn.URL = request.url
             conn
         }
     }
@@ -230,7 +191,7 @@ class HTTPClientSpec extends Specification {
 
     void 'handles exceptions thrown from connection factory'() {
         given:
-        httpClient.httpConnectionFactory = [getConnection: { url, proxy -> throw new Exception('fail')}] as HTTPConnectionFactory
+        httpClient.httpConnectionFactory = [getConnection: { request -> throw new Exception('fail')}] as HTTPConnectionFactory
 
         when:
         httpClient.execute(mockHttpGetRequest)
